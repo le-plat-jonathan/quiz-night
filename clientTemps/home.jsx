@@ -7,7 +7,7 @@ const Home = () => {
     useEffect(() => {
         const fetchQuizzes = async () => {
             try {
-                const response = await axios.get('/api/quizzes');
+                const response = await axios.get('/get/quizzes');
                 setQuizzes(response.data);
             } catch (error) {
                 console.error(error);

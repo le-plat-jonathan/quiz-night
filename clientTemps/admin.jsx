@@ -9,7 +9,7 @@ const Admin = () => {
     useEffect(() => {
         const fetchQuizzes = async () => {
             try {
-                const response = await axios.get('/api/quizzes');
+                const response = await axios.get('/get/quizzes');
                 setQuizzes(response.data);
             } catch (error) {
                 console.error(error);
@@ -22,7 +22,7 @@ const Admin = () => {
     const handleCreateQuiz = async (e) => {
         e.preventDefault();
         try {
-            const response = await axios.post('/api/quizzes', { title, description });
+            const response = await axios.post('/post/quizzes', { title, description });
             setQuizzes([...quizzes, response.data]);
         } catch (error) {
             console.error(error);
@@ -31,7 +31,7 @@ const Admin = () => {
 
     const handleDeleteQuiz = async (id) => {
         try {
-            await axios.delete(`/api/quizzes/${id}`);
+            await axios.delete(`/delete/quizzes/${id}`);
             setQuizzes(quizzes.filter((quiz) => quiz.id !== id));
         } catch (error) {
             console.error(error);

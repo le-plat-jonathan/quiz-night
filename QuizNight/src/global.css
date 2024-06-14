@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 254 37% 100%;
+    --foreground: 254 74% 5%;
+    --muted: 254 39% 89%;
+    --muted-foreground: 254 8% 29%;
+    --popover: 254 37% 100%;
+    --popover-foreground: 254 74% 5%;
+    --card: 0 0% 99%;
+    --card-foreground: 254 74% 4%;
+    --border: 254 10% 92%;
+    --input: 254 10% 92%;
+    --primary: 254 87% 61%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 254 16% 84%;
+    --secondary-foreground: 254 16% 24%;
+    --accent: 254 26% 76%;
+    --accent-foreground: 254 26% 16%;
+    --destructive: 0 94% 42%;
+    --destructive-foreground: 0 0% 100%;
+    --ring: 254 87% 61%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 254 42% 1%;
+    --foreground: 254 37% 100%;
+    --muted: 254 39% 11%;
+    --muted-foreground: 254 8% 71%;
+    --popover: 254 42% 1%;
+    --popover-foreground: 254 37% 100%;
+    --card: 254 42% 2%;
+    --card-foreground: 0 0% 100%;
+    --border: 254 10% 13%;
+    --input: 254 10% 13%;
+    --primary: 254 87% 61%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 254 7% 19%;
+    --secondary-foreground: 254 7% 79%;
+    --accent: 254 16% 26%;
+    --accent-foreground: 254 16% 86%;
+    --destructive: 0 94% 47%;
+    --destructive-foreground: 0 0% 100%;
+    --ring: 254 87% 61%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  ::-webkit-progress-bar {
+    @apply bg-primary/20;
+  }
+  ::-webkit-progress-value {
+    @apply bg-primary;
+  }
+}

@@ -16,7 +16,11 @@ $id = isset($request_uri[2]) ? $request_uri[2] : null;
 
 switch ($request_method) {
     case 'POST':
-        handlePostRequest($endpoint);
+        if ($endpoint == 'logout') {
+            handleLogoutRequest();
+        } else {
+            handlePostRequest($endpoint);
+        }
         break;
     case 'GET':
         handleGetRequest($endpoint, $id);
@@ -73,10 +77,14 @@ function handlePostRequest($endpoint) {
             $user->password = $password;
 
             if ($user->login()) {
-                session_start();
-                $_SESSION['user_id'] = $user->id;
-                $_SESSION['username'] = $user->username;
-                echo json_encode(array("message" => "Login successful."));
+                if (session_status() == PHP_SESSION_NONE) {
+                    session_start();
+                    $_SESSION['user_id'] = $user->id;
+                    $_SESSION['username'] = $user->username;
+                    echo json_encode(array("message" => "Login successful."));
+                } else {
+                    echo json_encode(array("message" => "Session already exists."));
+                }
             } else {
                 echo json_encode(array("message" => "Login failed."));
             }
@@ -154,6 +162,26 @@ function handlePostRequest($endpoint) {
             echo json_encode(array("message" => "Invalid POST action."));
             break;
     }
+}
+
+function handleLogoutRequest() {
+    if (session_status() == PHP_SESSION_NONE) {
+        session_start();
+    }
+    
+    $_SESSION = array();
+    
+    if (ini_get("session.use_cookies")) {
+        $params = session_get_cookie_params();
+        setcookie(session_name(), '', time() - 42000,
+            $params["path"], $params["domain"],
+            $params["secure"], $params["httponly"]
+        );
+    }
+    
+    session_destroy();
+    
+    echo json_encode(array("message" => "Logout successful."));
 }
 
 

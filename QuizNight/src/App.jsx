@@ -12,6 +12,7 @@ import { AccountPage } from "./pages/user/Account";
 import { DashboardPage } from "./pages/user/Dashboard";
 import QuizFormPage from "./pages/user/QuizForm";
 import { RootUserLayout } from "./pages/user/RootUser";
+import { checkAuthLoader } from "./utils/auth";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -39,7 +40,7 @@ const router = createBrowserRouter([
     path: "/user",
     element: <RootUserLayout />,
     errorElement: <ErrorPage />,
-    // loader: checkAuthLoader,
+    loader: checkAuthLoader,
     children: [
       { path: "", element: <DashboardPage /> },
       { path: "create-quiz", element: <QuizFormPage /> },

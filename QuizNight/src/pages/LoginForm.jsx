@@ -19,13 +19,13 @@ export const LoginFormPage = () => {
   const { login, authError } = useContext(AuthContext);
   const mutation = useMutation(
     (user) =>
-      client("http://localhost:8000/api/connexion", {
+      client("http://localhost:8888/server/index.php/login", {
         method: "POST",
         data: user,
       }),
     {
       onSuccess: (data) => {
-        login(data.token);
+        login(data.user_id);
         if (!authError) {
           navigate("/user");
         }

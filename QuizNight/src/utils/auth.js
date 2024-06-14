@@ -1,9 +1,9 @@
-export const setSession = (token) => {
-  localStorage.setItem("jwtToken", token);
+export const setSession = (user_id) => {
+  localStorage.setItem("user_id", user_id);
 };
 
 export const getSession = () => {
-  return localStorage.getItem("jwtToken");
+  return localStorage.getItem("user_id");
 };
 
 export const checkAuthLoader = () => {

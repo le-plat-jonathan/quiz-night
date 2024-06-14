@@ -19,7 +19,7 @@ export const SignupForm = () => {
   const { login, authError } = useContext(AuthContext);
   const mutation = useMutation(
     (user) =>
-      client("http://localhost:8000/api/addUser", {
+      client("http://localhost:8888/server/index.php/register", {
         method: "POST",
         data: user,
       }),

@@ -69,7 +69,7 @@ const MobileNav = ({ style, styleActive }) => (
 export const RootUserLayout = () => {
   const navigate = useNavigate();
   const logout = () => {
-    localStorage.removeItem("jwtToken");
+    localStorage.removeItem("user_id");
     navigate("/");
   };
   const style =

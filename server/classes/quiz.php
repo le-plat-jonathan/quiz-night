@@ -79,5 +79,53 @@ class Quiz {
 
         return false;
     }
+    public function readAllWithDetails() {
+        $query = "SELECT * FROM " . $this->table_name;
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        $quizzes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+        foreach ($quizzes as &$quiz) {
+            $quiz['questions'] = $this->getQuestionsWithAnswers($quiz['id']);
+        }
+    
+        return $quizzes;
+    }
+    
+    public function readOneWithDetails($id) {
+        $query = "SELECT * FROM " . $this->table_name . " WHERE id = ?";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(1, $id);
+        $stmt->execute();
+        $quiz = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+        if ($quiz) {
+            $quiz['questions'] = $this->getQuestionsWithAnswers($id);
+        }
+    
+        return $quiz;
+    }
+    
+    private function getQuestionsWithAnswers($quiz_id) {
+        $query = "SELECT * FROM questions WHERE quiz_id = ?";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(1, $quiz_id);
+        $stmt->execute();
+        $questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+        foreach ($questions as &$question) {
+            $question['answers'] = $this->getAnswers($question['id']);
+        }
+    
+        return $questions;
+    }
+    
+    private function getAnswers($question_id) {
+        $query = "SELECT * FROM answers WHERE question_id = ?";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(1, $question_id);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }    
 }
 ?>

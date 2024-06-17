@@ -255,8 +255,12 @@ function handleGetRequest($endpoint, $id) {
     switch ($endpoint) {
         case 'quizzes':
             $quiz = new Quiz($db);
-            $stmt = $quiz->read();
-            echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+            if ($id) {
+                echo json_encode($quiz->readOneWithDetails($id));
+            } else {
+                $stmt = $quiz->readAllWithDetails();
+                echo json_encode($stmt);
+            }
             break;
 
         case 'questions':
@@ -278,6 +282,7 @@ function handleGetRequest($endpoint, $id) {
             break;
     }
 }
+
 
 function handlePutRequest($endpoint, $id) {
     global $db;

@@ -1,29 +1,36 @@
 <?php
 
+// Headers pour gérer les requêtes CORS
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 
+// Gestion des requêtes OPTIONS pour CORS
 if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     http_response_code(200);
     exit();
 }
 
+// Inclusion des fichiers de classes nécessaires
 include_once 'classes/db.php';
 include_once 'classes/User.php';
 include_once 'classes/Quiz.php';
 include_once 'classes/Question.php';
 include_once 'classes/Answer.php';
 
+// Création d'une connexion à la base de données
 $database = new Database();
 $db = $database->getConnection();
 
+// Récupération de la méthode de requête et de l'URI
 $request_method = $_SERVER['REQUEST_METHOD'];
 $request_uri = explode('/', trim($_SERVER['REQUEST_URI'], '/'));
 
+// Détermination du endpoint et de l'ID (si présent) à partir de l'URI
 $endpoint = isset($request_uri[1]) ? $request_uri[1] : '';
 $id = isset($request_uri[2]) ? $request_uri[2] : null;
 
+// Gestion des requêtes en fonction de la méthode HTTP
 switch ($request_method) {
     case 'POST':
         if ($endpoint == 'logout') {
@@ -46,12 +53,14 @@ switch ($request_method) {
         break;
 }
 
+// Fonction pour gérer les requêtes POST
 function handlePostRequest($endpoint) {
     global $db;
     $input = json_decode(file_get_contents('php://input'), true);
 
     switch ($endpoint) {
         case 'register':
+            // Enregistrement d'un nouvel utilisateur
             $username = isset($input["username"]) ? $input["username"] : null;
             $password = isset($input["password"]) ? $input["password"] : null;
             $email = isset($input["email"]) ? $input["email"] : null;
@@ -74,6 +83,7 @@ function handlePostRequest($endpoint) {
             break;
 
         case 'login':
+            // Connexion d'un utilisateur
             $email = isset($input['email']) ? filter_var($input['email'], FILTER_VALIDATE_EMAIL) : null;
             $password = isset($input['password']) ? $input['password'] : null;
 
@@ -101,10 +111,12 @@ function handlePostRequest($endpoint) {
             break;
 
         case 'quizzes':
+            // Création d'un quiz
             handleCreateQuizRequest($input);
             break;
 
         case 'questions':
+            // Création d'une question
             $quiz_id = isset($input["quiz_id"]) ? $input["quiz_id"] : null;
             $question_text = isset($input["question_text"]) ? $input["question_text"] : null;
 
@@ -125,10 +137,12 @@ function handlePostRequest($endpoint) {
             break;
 
         case 'answers':
+            // Création d'une réponse
             $question_id = isset($input["question_id"]) ? $input["question_id"] : null;
             $answer_text = isset($input["answer_text"]) ? $input["answer_text"] : null;
             $is_correct = isset($input["is_correct"]) ? $input["is_correct"] : null;
 
+            // Log pour le débogage
             error_log("question_id: " . $question_id);
             error_log("answer_text: " . $answer_text);
             error_log("is_correct: " . $is_correct);
@@ -156,6 +170,7 @@ function handlePostRequest($endpoint) {
     }
 }
 
+// Fonction pour gérer la création d'un quiz
 function handleCreateQuizRequest($input) {
     global $db;
     
@@ -229,6 +244,7 @@ function handleCreateQuizRequest($input) {
     }
 }
 
+// Fonction pour gérer la déconnexion
 function handleLogoutRequest() {
     if (session_status() == PHP_SESSION_NONE) {
         session_start();
@@ -249,11 +265,12 @@ function handleLogoutRequest() {
     echo json_encode(array("message" => "Logout successful."));
 }
 
-
+// Fonction pour gérer les requêtes GET
 function handleGetRequest($endpoint, $id) {
     global $db;
     switch ($endpoint) {
         case 'quizzes':
+            // Lecture des quizzes
             $quiz = new Quiz($db);
             if ($id) {
                 echo json_encode($quiz->readOneWithDetails($id));
@@ -264,6 +281,7 @@ function handleGetRequest($endpoint, $id) {
             break;
 
         case 'questions':
+            // Lecture des questions
             $question = new Question($db);
             $question->quiz_id = $id ?: die(json_encode(array("message" => "quiz_id missing.")));
             $stmt = $question->read();
@@ -271,6 +289,7 @@ function handleGetRequest($endpoint, $id) {
             break;
 
         case 'answers':
+            // Lecture des réponses
             $answer = new Answer($db);
             $answer->question_id = $id ?: die(json_encode(array("message" => "question_id missing.")));
             $stmt = $answer->read();
@@ -283,40 +302,19 @@ function handleGetRequest($endpoint, $id) {
     }
 }
 
-
+// Fonction pour gérer les requêtes PUT
 function handlePutRequest($endpoint, $id) {
     global $db;
     $input = json_decode(file_get_contents("php://input"), true);
 
     switch ($endpoint) {
         case 'quizzes':
-            if (!isset($input['title']) || !isset($input['description'])) {
-                echo json_encode(array("message" => "Invalid input data."));
-                return;
-            }
-
-            $quiz = new Quiz($db);
-            $quiz->id = $id;
-            $quiz->title = $input['title'];
-            $quiz->description = $input['description'];
-
-            echo json_encode($quiz->update() ? array("message" => "Quiz updated successfully.") : array("message" => "Unable to update quiz."));
-            break;
-
-        case 'questions':
-            if (!isset($input['question_text'])) {
-                echo json_encode(array("message" => "Invalid input data."));
-                return;
-            }
-
-            $question = new Question($db);
-            $question->id = $id;
-            $question->question_text = $input['question_text'];
-
-            echo json_encode($question->update() ? array("message" => "Question updated successfully.") : array("message" => "Unable to update question."));
+            // Mise à jour d'un quiz
+            handleUpdateQuizRequest($id, $input);
             break;
 
         case 'answers':
+            // Mise à jour d'une réponse
             if (!isset($input['answer_text']) || !isset($input['is_correct'])) {
                 echo json_encode(array("message" => "Invalid input data."));
                 return;
@@ -336,10 +334,12 @@ function handlePutRequest($endpoint, $id) {
     }
 }
 
+// Fonction pour gérer les requêtes DELETE
 function handleDeleteRequest($endpoint, $id) {
     global $db;
     switch ($endpoint) {
         case 'quizzes':
+            // Suppression d'un quiz
             $quiz = new Quiz($db);
             $quiz->id = $id;
 
@@ -347,6 +347,7 @@ function handleDeleteRequest($endpoint, $id) {
             break;
 
         case 'questions':
+            // Suppression d'une question
             $question = new Question($db);
             $question->id = $id;
 
@@ -354,6 +355,7 @@ function handleDeleteRequest($endpoint, $id) {
             break;
 
         case 'answers':
+            // Suppression d'une réponse
             $answer = new Answer($db);
             $answer->id = $id;
 
@@ -365,4 +367,95 @@ function handleDeleteRequest($endpoint, $id) {
             break;
     }
 }
+
+// Fonction pour gérer la mise à jour d'un quiz
+function handleUpdateQuizRequest($id, $input) {
+    global $db;
+    
+    $title = isset($input["title"]) ? $input["title"] : null;
+    $description = isset($input["description"]) ? $input["description"] : null;
+    $created_by = isset($input["created_by"]) ? $input["created_by"] : null;
+    $questions = isset($input["questions"]) ? $input["questions"] : [];
+
+    if (!$title || !$description || !$created_by || empty($questions)) {
+        echo json_encode(array("message" => "Invalid input data."));
+        return;
+    }
+
+    try {
+        $db->beginTransaction();
+
+        // Mettre à jour le quiz
+        $quiz = new Quiz($db);
+        $quiz->id = $id;
+        $quiz->title = $title;
+        $quiz->description = $description;
+        $quiz->created_by = $created_by;
+
+        if (!$quiz->update()) {
+            throw new Exception("Unable to update quiz.");
+        }
+
+        // Supprimer les anciennes questions et réponses associées
+        $question = new Question($db);
+        $question->quiz_id = $id;
+        $stmt = $question->read();
+        $existingQuestions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($existingQuestions as $existingQuestion) {
+            $answer = new Answer($db);
+            $answer->question_id = $existingQuestion['id'];
+            $answer->deleteByQuestionId();
+
+            $question->id = $existingQuestion['id'];
+            $question->delete();
+        }
+
+        // Créer les nouvelles questions et réponses
+        foreach ($questions as $question_data) {
+            $question_text = isset($question_data["question_text"]) ? $question_data["question_text"] : null;
+            $answers = isset($question_data["answers"]) ? $question_data["answers"] : [];
+
+            if (!$question_text || empty($answers)) {
+                throw new Exception("Invalid question input data.");
+            }
+
+            $question = new Question($db);
+            $question->quiz_id = $id;
+            $question->question_text = $question_text;
+
+            if (!$question->create()) {
+                throw new Exception("Unable to create question.");
+            }
+
+            $question_id = $db->lastInsertId();
+
+            foreach ($answers as $answer_data) {
+                $answer_text = isset($answer_data["answer_text"]) ? $answer_data["answer_text"] : null;
+                $is_correct = isset($answer_data["is_correct"]) ? $answer_data["is_correct"] : null;
+
+                if (!$answer_text || $is_correct === null) {
+                    throw new Exception("Invalid answer input data.");
+                }
+
+                $answer = new Answer($db);
+                $answer->question_id = $question_id;
+                $answer->answer_text = $answer_text;
+                $answer->is_correct = $is_correct;
+
+                if (!$answer->create()) {
+                    throw new Exception("Unable to create answer.");
+                }
+            }
+        }
+
+        $db->commit();
+        echo json_encode(array("message" => "Quiz, questions and answers updated successfully."));
+
+    } catch (Exception $e) {
+        $db->rollBack();
+        echo json_encode(array("message" => $e->getMessage()));
+    }
+}
+
 ?>

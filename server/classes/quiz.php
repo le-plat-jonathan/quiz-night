@@ -16,24 +16,25 @@ class Quiz {
 
     public function create() {
         $query = "INSERT INTO " . $this->table_name . " SET title=:title, description=:description, created_by=:created_by";
-
+    
         $stmt = $this->conn->prepare($query);
-
+    
         $this->title=htmlspecialchars(strip_tags($this->title));
         $this->description=htmlspecialchars(strip_tags($this->description));
         $this->created_by=htmlspecialchars(strip_tags($this->created_by));
-
+    
         $stmt->bindParam(":title", $this->title);
         $stmt->bindParam(":description", $this->description);
         $stmt->bindParam(":created_by", $this->created_by);
-
+    
         if ($stmt->execute()) {
+            $this->id = $this->conn->lastInsertId();
             return true;
         }
-
+    
         return false;
     }
-
+    
     public function read() {
         $query = "SELECT * FROM " . $this->table_name;
 

@@ -1,4 +1,14 @@
 <?php
+
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
+
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
+
 include_once 'classes/db.php';
 include_once 'classes/User.php';
 include_once 'classes/Quiz.php';
@@ -91,25 +101,7 @@ function handlePostRequest($endpoint) {
             break;
 
         case 'quizzes':
-            $title = isset($input["title"]) ? $input["title"] : null;
-            $description = isset($input["description"]) ? $input["description"] : null;
-            $created_by = isset($input["created_by"]) ? $input["created_by"] : null;
-
-            if (!$title || !$description || !$created_by) {
-                echo json_encode(array("message" => "Invalid input data."));
-                return;
-            }
-
-            $quiz = new Quiz($db);
-            $quiz->title = $title;
-            $quiz->description = $description;
-            $quiz->created_by = $created_by;
-
-            if ($quiz->create()) {
-                echo json_encode(array("message" => "Quiz created successfully."));
-            } else {
-                echo json_encode(array("message" => "Unable to create quiz."));
-            }
+            handleCreateQuizRequest($input);
             break;
 
         case 'questions':
@@ -161,6 +153,79 @@ function handlePostRequest($endpoint) {
         default:
             echo json_encode(array("message" => "Invalid POST action."));
             break;
+    }
+}
+
+function handleCreateQuizRequest($input) {
+    global $db;
+    
+    $title = isset($input["title"]) ? $input["title"] : null;
+    $description = isset($input["description"]) ? $input["description"] : null;
+    $created_by = isset($input["created_by"]) ? $input["created_by"] : null;
+    $questions = isset($input["questions"]) ? $input["questions"] : [];
+
+    if (!$title || !$description || !$created_by || empty($questions)) {
+        echo json_encode(array("message" => "Invalid input data."));
+        return;
+    }
+
+    try {
+        $db->beginTransaction();
+
+        $quiz = new Quiz($db);
+        $quiz->title = $title;
+        $quiz->description = $description;
+        $quiz->created_by = $created_by;
+
+        if (!$quiz->create()) {
+            throw new Exception("Unable to create quiz.");
+        }
+
+        $quiz_id = $db->lastInsertId();
+
+        foreach ($questions as $question_data) {
+            $question_text = isset($question_data["question_text"]) ? $question_data["question_text"] : null;
+            $answers = isset($question_data["answers"]) ? $question_data["answers"] : [];
+
+            if (!$question_text || empty($answers)) {
+                throw new Exception("Invalid question input data.");
+            }
+
+            $question = new Question($db);
+            $question->quiz_id = $quiz_id;
+            $question->question_text = $question_text;
+
+            if (!$question->create()) {
+                throw new Exception("Unable to create question.");
+            }
+
+            $question_id = $db->lastInsertId();
+
+            foreach ($answers as $answer_data) {
+                $answer_text = isset($answer_data["answer_text"]) ? $answer_data["answer_text"] : null;
+                $is_correct = isset($answer_data["is_correct"]) ? $answer_data["is_correct"] : null;
+
+                if (!$answer_text || $is_correct === null) {
+                    throw new Exception("Invalid answer input data.");
+                }
+
+                $answer = new Answer($db);
+                $answer->question_id = $question_id;
+                $answer->answer_text = $answer_text;
+                $answer->is_correct = $is_correct;
+
+                if (!$answer->create()) {
+                    throw new Exception("Unable to create answer.");
+                }
+            }
+        }
+
+        $db->commit();
+        echo json_encode(array("message" => "Quiz, questions and answers created successfully."));
+
+    } catch (Exception $e) {
+        $db->rollBack();
+        echo json_encode(array("message" => $e->getMessage()));
     }
 }
 
